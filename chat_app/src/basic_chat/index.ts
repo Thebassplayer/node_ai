@@ -52,13 +52,6 @@ async function createChatCompletion() {
     }
   }
 
-  const secondResponse = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
-    messages: context,
-  });
-
-  console.log(secondResponse.choices[0].message.content);
-
   const responseRole = response.choices[0].message.role;
   const responseMessage = response.choices[0].message.content;
 
