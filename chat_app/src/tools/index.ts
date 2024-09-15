@@ -6,14 +6,30 @@ function getTime() {
   return new Date().toLocaleTimeString();
 }
 
+function getOrderStatus(orderId: string) {
+  console.log(`The order ${orderId} is still being processed`);
+
+  const orderAsNumber = +orderId;
+
+  if (orderAsNumber % 2 === 0) {
+    return "IN_PROGRESS";
+  }
+  return "COMPLETED";
+}
+
 const context: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
   {
     role: "system",
-    content: "You are an expert in Spain travel",
+    content:
+      "You are a helpfull assistant that gives me information about the time of the day and order status",
+  },
+  {
+    role: "user",
+    content: "What is the status of order 1234?",
   },
 ];
 
-async function createChatCompletion() {
+async function callOpenAiWithTools() {
   const response = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: context,
@@ -23,6 +39,23 @@ async function createChatCompletion() {
         function: {
           name: "getTime",
           description: "Get the current time",
+        },
+      },
+      {
+        type: "function",
+        function: {
+          name: "getOrderStatus",
+          description: "Return the status of an order",
+          parameters: {
+            type: "object",
+            properties: {
+              orderId: {
+                type: "string",
+                description: "The id of the order to get the status of",
+              },
+            },
+            required: ["orderId"],
+          },
         },
       },
     ],
@@ -46,6 +79,19 @@ async function createChatCompletion() {
       console.log(`assistant: The current time is ${currentTime}`);
       return;
     }
+
+    if (toolName === "getOrderStatus") {
+      const rawArgument = toolCall.function.arguments;
+      const parsedArguments = JSON.parse(rawArgument);
+      const currentTime = getOrderStatus(parsedArguments.orderId);
+      context.push(response.choices[0].message);
+      context.push({
+        role: "tool",
+        content: currentTime,
+        tool_call_id: toolCall.id,
+      });
+      return;
+    }
   }
 
   const secondResponse = await openai.chat.completions.create({
@@ -64,5 +110,5 @@ process.stdin.addListener("data", async function (input) {
     content: userInput,
   });
 
-  await createChatCompletion();
+  await callOpenAiWithTools();
 });
