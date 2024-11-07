@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node --no-warnings --loader ts-node/esm --env-file=.env src/index.ts",
+    "start": "node --no-warnings --loader ts-node/esm --env-file=.env src/chroma/client.ts",
     "dev": "npx nodemon ./src/index.ts"
   },
   "author": "",
@@ -17,6 +17,8 @@
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "chromadb": "^1.9.2",
+    "chromadb-default-embed": "^2.13.2",
     "openai": "^4.68.4"
   }
 }
