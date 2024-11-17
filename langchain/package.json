@@ -1,0 +1,20 @@
+{
+  "name": "langchain",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node --no-warnings --loader ts-node/esm --env-file=.env src/rag/basic.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@types/node": "^22.9.0",
+    "langchain": "^0.3.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
