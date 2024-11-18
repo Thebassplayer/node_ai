@@ -13,56 +13,50 @@ const model = new ChatOpenAI({
 const question = "Explain me a good breathing technique for weaking up early";
 
 async function main() {
-  const loader = new PDFLoader("breatheology_spanish.pdf", {
-    parsedItemSeparator: "\n",
-  });
-  const docs = await loader.load();
+  const embeddings = new OpenAIEmbeddings();
 
-  // split the docs
-  const splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 2000,
-    chunkOverlap: 20,
-  });
+  const collectionName = "breatheology_spanish";
+  const url = "http://localhost:8000";
 
-  const splitedDocs = await splitter.splitDocuments(docs);
-
-  // store the data
-  const vectorStore = await Chroma.fromDocuments(
-    splitedDocs,
-    new OpenAIEmbeddings(),
-    {
-      collectionName: "breatheology_spanish",
-      url: "http://localhost:8000",
-    }
-  );
-  await vectorStore.addDocuments(splitedDocs);
-
-  // data retriever
-  const retriever = vectorStore.asRetriever({
-    k: 2,
+  // Initialize Chroma with the collection name and URL
+  const vectorStore = await Chroma.fromExistingCollection(embeddings, {
+    collectionName,
+    url,
   });
 
-  // get relevant documents
-  const relevantDocuments = await retriever.invoke(question);
-  const resultDocs = relevantDocuments.map(doc => doc.pageContent);
+  // Check if the collection already exists
+  const collectionExists = await vectorStore.collectionExists();
 
-  // buils template
-  const prompt = ChatPromptTemplate.fromMessages([
-    [
-      "system",
-      "Answer the user question based on the following context: {context}",
-    ],
-    ["user", "{input}"],
-  ]);
+  if (collectionExists) {
+    console.log("Data already exists in the database. Using existing data.");
+    // Retrieve existing documents from the database
+    const existingDocs = await vectorStore.getDocuments();
+    console.log(existingDocs);
+  } else {
+    console.log(
+      "Data does not exist in the database. Loading, splitting, and storing data."
+    );
 
-  const chain = prompt.pipe(model);
+    // Load the PDF
+    const loader = new PDFLoader("breatheology_spanish.pdf", {
+      parsedItemSeparator: "\n",
+    });
+    const docs = await loader.load();
 
-  const response = await chain.invoke({
-    input: question,
-    context: resultDocs,
-  });
+    // Split the docs
+    const splitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 2000,
+      chunkOverlap: 20,
+    });
+    const splitedDocs = await splitter.splitDocuments(docs);
 
-  console.log(response.content);
+    // Store the data
+    await vectorStore.addDocuments(splitedDocs);
+    console.log("Data stored successfully.");
+  }
+
+  // Data retriever
+  // Your data retrieval logic here
 }
 
-main();
+main().catch(console.error);
